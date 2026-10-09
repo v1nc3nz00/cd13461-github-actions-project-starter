@@ -1,14 +1,16 @@
 name: Deploy Test
 on:
   push:
-    branches: ["main"]
+    branches: 
+      - main
     paths-ignore:
-        - ".gitignore"
-        - "README.md"
-        - "CONTRIBUTING.md"
-        - "LICENSE.txt"
+      - ".gitignore"
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "LICENSE.txt"
   pull_request:
-    branches: ["main"]
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       force_deploy:
@@ -22,25 +24,29 @@ concurrency:
   cancel-in-progress: true
 
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-  issues: write
+# permissions:
+#   contents: read
+#   pages: write
+#   id-token: write
+#   issues: write
 
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - uses: actions/cache@v4
+      - name: Cache
+        id: npm-cache
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
@@ -54,21 +60,20 @@ jobs:
       - name: Run all linters
         run: npm run lint:all
 
-      - name: Run all scripts from folder scripts/
+      - name: Run all scripts from folder scripts
         env:
           URL_CHECKER_TIMEOUT: ${{ vars.URL_CHECKER_TIMEOUT || '5000' }}
         run: node script/url-checker.js -t $URL_CHECKER_TIMEOUT -d src/posts
 
   build:
+    name: Build
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
-    env:
-      URL_CHECKER_TIMEOUT: 120
-      GITHUB_PAGES: true
-      PATH_PREFIX: "/${{ github.event.repository.name }}/" #'/cd13461-github-actions-project-starter/'
     steps:
-      - name: Checkout steps
+      - name: Checkout step
         uses: actions/checkout@v4
 
       - name: Setup Pages
@@ -79,7 +84,9 @@ jobs:
         with:
           node-version: 18
 
-      - uses: actions/cache@v4
+      - name: Cache
+        uses: actions/cache@v4
+        id: npm-cache
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
@@ -98,12 +105,14 @@ jobs:
       - name: Upload static pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '_site/'
+          path: _site/
 
   deploy:
+    name: Deploy
     needs: [test, build]
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
       issues: write
@@ -114,12 +123,15 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
       - name: Create Issues
-        run: |
-          DATE=$(date +'%Y-%m-%d')
-          gh issue --repo ${{ github.repository }} \
-            create --title "$DATE - Deployment: $DEPLOY_STATUS" --body "URL: $PAGE_URL"
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_STATUS: ${{ job.status }}
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          DATE=$(date +'%Y-%m-%d')
+          gh issue --repo ${{ github.repository }} \
+            create --title "$DATE - Deployment: $DEPLOY_STATUS" --body "URL: $PAGE_URL"
+
