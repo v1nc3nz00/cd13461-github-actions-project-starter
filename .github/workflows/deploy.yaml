@@ -59,67 +59,67 @@ jobs:
           URL_CHECKER_TIMEOUT: ${{ vars.URL_CHECKER_TIMEOUT || '5000' }}
         run: node script/url-checker.js -t $URL_CHECKER_TIMEOUT -d src/posts
 
-#   build:
-#     needs: test
-#     runs-on: ubuntu-latest
+  build:
+    needs: test
+    runs-on: ubuntu-latest
 
-#     env:
-#       URL_CHECKER_TIMEOUT: 120
-#       GITHUB_PAGES: true
-#       PATH_PREFIX: "/${{ github.event.repository.name }}/" #'/cd13461-github-actions-project-starter/'
-#     steps:
-#       - name: Checkout steps
-#         uses: actions/checkout@v4
+    env:
+      URL_CHECKER_TIMEOUT: 120
+      GITHUB_PAGES: true
+      PATH_PREFIX: "/${{ github.event.repository.name }}/" #'/cd13461-github-actions-project-starter/'
+    steps:
+      - name: Checkout steps
+        uses: actions/checkout@v4
 
-#       - name: Setup Pages
-#         uses: actions/configure-pages@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-#       - name: Setup node
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: 18
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-#       - uses: actions/cache@v4
-#         with:
-#           path: node_modules
-#           key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-#           restore-keys: |
-#             ${{ runner.os }}-node-modules-
+      - uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
 
-#       - name: Install dependencies
-#         if: steps.npm-cache.outputs.cache-hit != 'true'
-#         run: npm ci
+      - name: Install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm ci
 
-#       - name: Set PATH_PREFIX and Build
-#         env:
-#           PATH_PREFIX: /${{ github.event.repository.name }}/
-#         run: npm run prod
+      - name: Set PATH_PREFIX and Build
+        env:
+          PATH_PREFIX: /${{ github.event.repository.name }}/
+        run: npm run prod
         
-#       - name: Upload static pages artifact
-#         uses: actions/upload-pages-artifact@v3
-#         with:
-#           path: '_site/'
+      - name: Upload static pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site/'
 
-#   deploy:
-#     needs: [test, build]
-#     runs-on: ubuntu-latest
-#     permissions:
-#       pages: write
-#       id-token: write
-#       issues: write
-#     environment:
-#       name: github-pages
-#       url: ${{ steps.deployment.outputs.page_url }}
-#     steps:
-#       - name: Deploy to GitHub Pages
-#         id: deployment
-#         uses: actions/deploy-pages@v4
-#       - name: Create Issues
-#         run: |
-#           DATE=$(date +'%Y-%m-%d')
-#           gh issue --repo ${{ github.repository }} \
-#             create --title "$DATE - Deployment: $DEPLOY_STATUS" --body "URL: $PAGE_URL"
-#         env:
-#           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#           DEPLOY_STATUS: ${{ job.status }}
-#           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+  deploy:
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      issues: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Create Issues
+        run: |
+          DATE=$(date +'%Y-%m-%d')
+          gh issue --repo ${{ github.repository }} \
+            create --title "$DATE - Deployment: $DEPLOY_STATUS" --body "URL: $PAGE_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_STATUS: ${{ job.status }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
