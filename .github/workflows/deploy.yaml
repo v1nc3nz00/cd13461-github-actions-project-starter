@@ -121,7 +121,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: github-pages
-          path: ./downloaded-site
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
